@@ -35,7 +35,7 @@ impl<TState, TTransition> Solver<TState, TTransition>
         // closure with signature `fn(&'2 TState) -> bool` must implement `Fn<(&'1 TState,)>`, for any lifetime `'1`...
         // ...but it actually implements `Fn<(&'2 TState,)>`, for some specific lifetime `'2`
         // 
-        // when we want to  pass it to Discoverer::new. this is really quite weird since vscode even says the inferred type
+        // when we want to pass it to Discoverer::new. this is really quite weird since vscode even says the inferred type
         // is exacty what we then manually specify.
         let already_explored_binding = |n: &TState| self.explored_states.borrow().contains(n);
 
