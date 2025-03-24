@@ -1,0 +1,7 @@
+[package]
+name = "example_empty_rectangle"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+meet-in-the-middle = { path = "../meet-in-the-middle" }

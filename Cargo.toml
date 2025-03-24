@@ -1,0 +1,3 @@
+[workspace]
+resolver = "3"
+members = [ "example_empty_rectangle", "meet-in-the-middle","rubicks"]
