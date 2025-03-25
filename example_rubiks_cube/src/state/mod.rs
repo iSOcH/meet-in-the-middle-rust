@@ -30,13 +30,36 @@ impl State for RubiksCubeState {
     }
 
     fn get_possible_transitions(&self) -> impl Iterator<Item = &Self::Transition> {
-        todo!()
+        transition::ALL_ROTATIONS.iter()
     }
 }
 
 mod transition {
-    #[derive(Clone, Copy)]
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     pub struct RubiksCubeRotation(u8);
+
+    pub static ALL_ROTATIONS: [RubiksCubeRotation; 18] = [
+        RubiksCubeRotation::new(Axis::X, Row::First, Times::Once),
+        RubiksCubeRotation::new(Axis::X, Row::First, Times::Twice),
+        RubiksCubeRotation::new(Axis::X, Row::First, Times::Thrice),
+        RubiksCubeRotation::new(Axis::X, Row::Last, Times::Once),
+        RubiksCubeRotation::new(Axis::X, Row::Last, Times::Twice),
+        RubiksCubeRotation::new(Axis::X, Row::Last, Times::Thrice),
+
+        RubiksCubeRotation::new(Axis::Y, Row::First, Times::Once),
+        RubiksCubeRotation::new(Axis::Y, Row::First, Times::Twice),
+        RubiksCubeRotation::new(Axis::Y, Row::First, Times::Thrice),
+        RubiksCubeRotation::new(Axis::Y, Row::Last, Times::Once),
+        RubiksCubeRotation::new(Axis::Y, Row::Last, Times::Twice),
+        RubiksCubeRotation::new(Axis::Y, Row::Last, Times::Thrice),
+
+        RubiksCubeRotation::new(Axis::Z, Row::First, Times::Once),
+        RubiksCubeRotation::new(Axis::Z, Row::First, Times::Twice),
+        RubiksCubeRotation::new(Axis::Z, Row::First, Times::Thrice),
+        RubiksCubeRotation::new(Axis::Z, Row::Last, Times::Once),
+        RubiksCubeRotation::new(Axis::Z, Row::Last, Times::Twice),
+        RubiksCubeRotation::new(Axis::Z, Row::Last, Times::Thrice),
+    ];
 
     #[repr(u8)]
     #[derive(Debug, PartialEq)]
@@ -74,7 +97,7 @@ mod transition {
         const ROW_MASK: u8   = 0b0010_0000;
         const TIMES_MASK: u8 = 0b0001_1000;
 
-        pub fn new(axis: Axis, row: Row, times: Times) -> Self {
+        pub const fn new(axis: Axis, row: Row, times: Times) -> Self {
             let value = (axis as u8) << 6 | (row as u8) << 5 | (times as u8) << 3;
             RubiksCubeRotation(value)
         }
