@@ -1,5 +1,5 @@
 [package]
-name = "example_empty_rectangle"
+name = "example_rubiks_cube"
 version = "0.1.0"
 edition = "2024"
 

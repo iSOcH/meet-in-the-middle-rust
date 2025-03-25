@@ -1,5 +1,5 @@
 [package]
-name = "meet-in-the-middle"
+name = "meet_in_the_middle"
 version = "0.1.0"
 edition = "2024"
 

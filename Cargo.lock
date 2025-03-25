@@ -6,16 +6,16 @@ version = 4
 name = "example_empty_rectangle"
 version = "0.1.0"
 dependencies = [
- "meet-in-the-middle",
+ "meet_in_the_middle",
 ]
 
 [[package]]
-name = "meet-in-the-middle"
-version = "0.1.0"
-
-[[package]]
-name = "rubicks"
+name = "example_rubiks_cube"
 version = "0.1.0"
 dependencies = [
- "meet-in-the-middle",
+ "meet_in_the_middle",
 ]
+
+[[package]]
+name = "meet_in_the_middle"
+version = "0.1.0"
