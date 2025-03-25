@@ -5,4 +5,4 @@ mod state;
 mod solver;
 
 pub use state::State;
-pub use solver::Solver;
+pub use solver::{find_path, find_nodes_on_path};

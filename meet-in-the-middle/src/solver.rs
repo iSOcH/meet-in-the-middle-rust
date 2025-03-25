@@ -1,14 +1,45 @@
-use std::{collections::{HashSet, VecDeque}, rc::Rc, sync::RwLock};
+use std::collections::{HashSet, VecDeque};
 
 use crate::State;
+
+pub fn find_path<TState, TTransition>(source: &TState, target: &TState) -> impl IntoIterator<Item = TState> where
+    TState : State<Transition = TTransition> {
+    let mut nodes_between = find_nodes_on_path(source, target);
+    nodes_between.push_front(source.clone());
+    nodes_between.push_back(target.clone());
+    nodes_between
+}
+
+pub fn find_nodes_on_path<TState, TTransition>(source: &TState, target: &TState) -> VecDeque<TState> where
+    TState : State<Transition = TTransition> {
+
+    if source == target {
+        return VecDeque::new();
+    }
+
+    let mut neighbors_of_source = source.get_neighbors();
+    if neighbors_of_source.find(|n| n == target).is_some() {
+        return VecDeque::new();
+    }
+
+    let mut solver = Solver::new(source.clone(), target.clone());
+    
+    if let Some(node_on_path) = solver.run() {
+        let mut solution = VecDeque::new();
+        solution.extend(find_nodes_on_path(source, &node_on_path));
+        solution.push_back(node_on_path.clone());
+        solution.extend(find_nodes_on_path(&node_on_path, target));
+        return solution;
+    }
+
+    VecDeque::new()
+}
 
 pub struct Solver<TState, TTransition> where
     TState : State<Transition = TTransition>,
 {
     source: TState,
-    target: TState,
-
-    explored_states: Rc<RwLock<HashSet<TState>>>
+    target: TState
 }
 
 impl<TState, TTransition> Solver<TState, TTransition>
@@ -18,57 +49,31 @@ impl<TState, TTransition> Solver<TState, TTransition>
         Solver {
             source,
             target,
-            explored_states: Rc::new(RwLock::new(HashSet::new())),
         }
     }
 
-    pub fn run(&mut self) {
-        // interestingly we need to annotate the argument type of the closure here although we do not (and possibly cannot?) annotate the lifetime of &TState
-        // without annotating this, we get
-        //
-        // Implementation of `Fn` is not general enough
-        // closure with signature `fn(&'2 TState) -> bool` must implement `Fn<(&'1 TState,)>`, for any lifetime `'1`...
-        // ...but it actually implements `Fn<(&'2 TState,)>`, for some specific lifetime `'2`
-        // 
-        // when we want to pass it to Discoverer::new. this is really quite weird since vscode even says the inferred type
-        // is exacty what we then manually specify.
-        let explored_clone = Rc::clone(&self.explored_states);
-        let already_explored_binding = |n: &TState| explored_clone.read().unwrap().contains(n);
-
-        let mut from_source = Discoverer::new(&self.source, &already_explored_binding);
-        let mut from_target = Discoverer::new(&self.target, &already_explored_binding);
+    pub fn run(&mut self) -> Option<TState> {
+        let mut from_source = Discoverer::new(&self.source);
+        let mut from_target = Discoverer::new(&self.target);
 
         loop {
-            if let Some(node_found_from_source) = Self::explore(self.explored_states.clone(), &mut from_source, 10) {
+            if let Some(node_found_from_source) = Self::explore(&mut from_source, &from_target, 1) {
                 println!("We found a node on the way: {node_found_from_source:?}");
-                break;
+                return Some(node_found_from_source);
             }
             
-            if let Some(node_found_from_target) = Self::explore(self.explored_states.clone(), &mut from_target, 10) {
+            if let Some(node_found_from_target) = Self::explore(&mut from_target, &from_source, 1) {
                 println!("We found a node on the way: {node_found_from_target:?}");
-                break;
+                return Some(node_found_from_target);
             }
         }
-
-        println!("Finished");
     }
 
-    fn explore(explored_states: Rc<RwLock<HashSet<TState>>>, discoverer: &mut Discoverer<'_, TState, TTransition>, num_nodes: usize) -> Option<TState> {
-        for (item_nr, new_state) in discoverer.enumerate() {
-            let mut locked_set = explored_states.write().unwrap();
-
-            // TODO: it appears using the standard HashSet and HashMap structs it is not possible to use entry() API
-            // but keep ownership of the key (which we want, to return it). so for now we accept two lookups
-            if locked_set.contains(&new_state) {
+    fn explore(discoverer: &mut Discoverer<'_, TState, TTransition>, other_discoverer: &Discoverer<'_, TState, TTransition>, num_nodes: usize) -> Option<TState> {
+        for new_state in discoverer.take(num_nodes) {
+            if other_discoverer.was_seen(&new_state) {
                 return Some(new_state);
-            } else {
-                if item_nr >= num_nodes {
-                    eprintln!("Switching to other source, last checked: {new_state:?}");
-                }
-                locked_set.insert(new_state);
             }
-
-            if item_nr >= num_nodes { break; }
         }
 
         None
@@ -79,30 +84,33 @@ struct Discoverer<'a, TState, TTransition> where
     TState : State<Transition = TTransition>,
 {
     source: &'a TState,
+    explored_states: HashSet<TState>,
     states_to_explore: VecDeque<TState>,
-
-    // a reference to something implementing Fn(&TState) -> bool
-    // the outer reference shares lifetime with this struct
-    // while TState passed to the Fn must accept an independent (much shorter) lifetime
-    // "for<'b>" is called a "Higher-Ranked Trait Bound", here it basically says "for any lifetime 'b ..."
-    // the parentheses would not be needed
-    already_seen: &'a dyn (for<'b> Fn(&'b TState) -> bool)
 }
 
 impl<'a, TState, TTransition> Discoverer<'a, TState, TTransition> where
     TState : State<Transition = TTransition>,
 {
-    fn new(source: &'a TState, already_seen: &'a dyn for<'b> Fn(&'b TState) -> bool) -> Discoverer<'a, TState, TTransition> {
-        let initial_transitions = source.get_possible_transitions();
+    fn new(source: &'a TState) -> Discoverer<'a, TState, TTransition> {
+        let mut states_to_explore = VecDeque::new();
+        states_to_explore.push_back(source.clone());
+        
+        let mut explored_states = HashSet::new();
+        explored_states.insert(source.clone());
+
         Discoverer {
             source: source,
-            states_to_explore: initial_transitions.iter().map(|t| source.apply(t)).collect(),
-            already_seen
+            explored_states,
+            states_to_explore
         }
     }
 
     fn add_for_later(&mut self, state: TState) {
         self.states_to_explore.push_back(state);
+    }
+
+    fn was_seen(&self, state: &TState) -> bool {
+        self.explored_states.contains(state)
     }
 }
 
@@ -112,24 +120,15 @@ impl<'a, TState, TTransition> Iterator for Discoverer<'a, TState, TTransition> w
     type Item = TState;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let to_explore = loop {
-            let potential_next = self.states_to_explore.pop_front()?;
-            if !(self.already_seen)(&potential_next) {
-                break Some(potential_next);
-            }
-        }?;
-
-        if (self.already_seen)(&to_explore) {
-            return None;
-        }
+        let to_explore = self.states_to_explore.pop_front()?;
 
         // breadth-first: remember to explore descendents of `to_explore` after this round
         for t in to_explore.get_possible_transitions() {
             let potential_future_state = to_explore.apply(&t);
             
-            let was_already_seen = (self.already_seen)(&potential_future_state);
+            let not_yet_visited = self.explored_states.insert(potential_future_state.clone());
 
-            if !was_already_seen {
+            if not_yet_visited {
                 self.add_for_later(potential_future_state);
             }
         }

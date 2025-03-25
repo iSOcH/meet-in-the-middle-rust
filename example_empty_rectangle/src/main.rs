@@ -1,30 +1,32 @@
-use std::fmt::Debug;
+use std::{fmt::{Debug, Display}, num::NonZeroUsize};
 
-use meet_in_the_middle::{Solver, State};
+use meet_in_the_middle::{find_path, State};
 
 fn main() {
     let rectangle_size = RectangleSize {
-        height: 10000,
-        width: 20000
+        height: 2000.try_into().unwrap(),
+        width: 3000.try_into().unwrap()
     };
 
-    let mut solver = Solver::new(
-        PositionInRectangle {
-            size: &rectangle_size,
-            x: 0,
-            y: 0
-        },
-        PositionInRectangle {
-            size: &rectangle_size,
-            x: 15000,
-            y: 7500
-        });
+    let source = PositionInRectangle {
+        size: &rectangle_size,
+        x: 57,
+        y: 234
+    };
 
-    solver.run();
+    let target = PositionInRectangle {
+        size: &rectangle_size,
+        x: 2763,
+        y: 1467
+    };
+
+    let path: Vec<_> = find_path(&source, &target).into_iter().map(|n| n.to_string()).collect();
+    println!("Path found with length: {:?}", path.len());
+    println!("Start: {:?}, End: {:?}", path.iter().take(4).collect::<Vec<_>>(), path.iter().rev().take(4).rev().collect::<Vec<_>>());
 }
 
 // Rectangle where top-left is 0/0 and bottom-right is x/y
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 struct PositionInRectangle<'a> {
     size: &'a RectangleSize,
     
@@ -40,6 +42,12 @@ impl<'a> Debug for PositionInRectangle<'a> {
             .field("y", &self.y)
             .field("distance_from_origin", &(self.x + self.y))
             .finish()
+    }
+}
+
+impl<'a> Display for PositionInRectangle<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "PositionInRectangle(x: {}, y: {})", self.x, self.y)
     }
 }
 
@@ -69,7 +77,7 @@ impl<'a> State for PositionInRectangle<'a> {
             possible_moves.push(Move::Left);
         }
 
-        if self.x < self.size.width - 1 {
+        if self.x < self.size.width.get() - 1 {
             possible_moves.push(Move::Right);
         }
 
@@ -77,7 +85,7 @@ impl<'a> State for PositionInRectangle<'a> {
             possible_moves.push(Move::Up);
         }
 
-        if self.y < self.size.height - 1 {
+        if self.y < self.size.height.get() - 1 {
             possible_moves.push(Move::Down);
         }
 
@@ -87,8 +95,8 @@ impl<'a> State for PositionInRectangle<'a> {
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 struct RectangleSize {
-    height: usize,
-    width: usize
+    height: NonZeroUsize,
+    width: NonZeroUsize
 }
 
 enum Move {
