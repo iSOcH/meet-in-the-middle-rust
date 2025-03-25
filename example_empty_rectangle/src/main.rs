@@ -70,26 +70,34 @@ impl<'a> State for PositionInRectangle<'a> {
         }
     }
 
-    fn get_possible_transitions(&self) -> Vec<Self::Transition> {
-        let mut possible_moves = vec![];
+    fn get_possible_transitions(&self) -> impl Iterator<Item = &Self::Transition> {
+        PossibleTransitionIterator::new(self.clone())
+    }
+}
 
-        if self.x > 0 {
-            possible_moves.push(Move::Left);
+struct PossibleTransitionIterator<'a> {
+    pos: PositionInRectangle<'a>,
+    next_check: usize,
+}
+
+impl<'a> PossibleTransitionIterator<'a> {
+    fn new(pos: PositionInRectangle<'a>) -> PossibleTransitionIterator<'a> {
+        PossibleTransitionIterator { pos, next_check: 0 }
+    }
+}
+
+impl<'a> Iterator for PossibleTransitionIterator<'a> {
+    type Item = &'a Move;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(m) = ALL_MOVES.get(self.next_check) {
+            self.next_check += 1;
+            if m.allowed(&self.pos) {
+                return Some(m);
+            }
         }
 
-        if self.x < self.size.width.get() - 1 {
-            possible_moves.push(Move::Right);
-        }
-
-        if self.y > 0 {
-            possible_moves.push(Move::Up);
-        }
-
-        if self.y < self.size.height.get() - 1 {
-            possible_moves.push(Move::Down);
-        }
-
-        possible_moves
+        None
     }
 }
 
@@ -104,4 +112,17 @@ enum Move {
     Up,
     Right,
     Down
+}
+
+static ALL_MOVES: [Move; 4] = [Move::Left, Move::Up, Move::Right, Move::Down];
+
+impl Move {
+    fn allowed(&self, pos: &PositionInRectangle) -> bool {
+        match &self {
+            Move::Left => pos.x > 0,
+            Move::Up => pos.y > 0,
+            Move::Right => pos.x < pos.size.width.get() - 1,
+            Move::Down => pos.y < pos.size.height.get() - 1
+        }
+    }
 }
