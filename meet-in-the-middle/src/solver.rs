@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::{HashSet, VecDeque}};
+use std::{collections::{HashSet, VecDeque}, rc::Rc, sync::RwLock};
 
 use crate::State;
 
@@ -8,7 +8,7 @@ pub struct Solver<TState, TTransition> where
     source: TState,
     target: TState,
 
-    explored_states: RefCell<HashSet<TState>>
+    explored_states: Rc<RwLock<HashSet<TState>>>
 }
 
 impl<TState, TTransition> Solver<TState, TTransition>
@@ -18,7 +18,7 @@ impl<TState, TTransition> Solver<TState, TTransition>
         Solver {
             source,
             target,
-            explored_states: RefCell::new(HashSet::new()),
+            explored_states: Rc::new(RwLock::new(HashSet::new())),
         }
     }
 
@@ -32,22 +32,46 @@ impl<TState, TTransition> Solver<TState, TTransition>
         // 
         // when we want to pass it to Discoverer::new. this is really quite weird since vscode even says the inferred type
         // is exacty what we then manually specify.
-        let already_explored_binding = |n: &TState| self.explored_states.borrow().contains(n);
+        let explored_clone = Rc::clone(&self.explored_states);
+        let already_explored_binding = |n: &TState| explored_clone.read().unwrap().contains(n);
 
-        let from_source = Discoverer::new(&self.source, &already_explored_binding);
-        // let from_target = Discoverer::new(&self.target);
+        let mut from_source = Discoverer::new(&self.source, &already_explored_binding);
+        let mut from_target = Discoverer::new(&self.target, &already_explored_binding);
 
-        for n in from_source {
-            if n == self.target {
-                println!("reached target");
+        loop {
+            if let Some(node_found_from_source) = Self::explore(self.explored_states.clone(), &mut from_source, 10) {
+                println!("We found a node on the way: {node_found_from_source:?}");
                 break;
-            } else {
-                // println!("checked {n:?}... ");
-                self.explored_states.borrow_mut().insert(n);
+            }
+            
+            if let Some(node_found_from_target) = Self::explore(self.explored_states.clone(), &mut from_target, 10) {
+                println!("We found a node on the way: {node_found_from_target:?}");
+                break;
             }
         }
 
         println!("Finished");
+    }
+
+    fn explore(explored_states: Rc<RwLock<HashSet<TState>>>, discoverer: &mut Discoverer<'_, TState, TTransition>, num_nodes: usize) -> Option<TState> {
+        for (item_nr, new_state) in discoverer.enumerate() {
+            let mut locked_set = explored_states.write().unwrap();
+
+            // TODO: it appears using the standard HashSet and HashMap structs it is not possible to use entry() API
+            // but keep ownership of the key (which we want, to return it). so for now we accept two lookups
+            if locked_set.contains(&new_state) {
+                return Some(new_state);
+            } else {
+                if item_nr >= num_nodes {
+                    eprintln!("Switching to other source, last checked: {new_state:?}");
+                }
+                locked_set.insert(new_state);
+            }
+
+            if item_nr >= num_nodes { break; }
+        }
+
+        None
     }
 }
 
