@@ -1,7 +1,24 @@
-use meet_in_the_middle;
+use meet_in_the_middle::State;
+use state::{transition::{Axis, Row, RubiksCubeRotation, Times}, RubiksCubeState};
 
 mod state;
 
 fn main() {
-    println!("Hello, again");
+    let cube = RubiksCubeState::solved();
+    println!("solved cube: {cube:?}");
+
+    let only_implemented_transition = RubiksCubeRotation::new(Axis::X, Row::First, Times::Once);
+    
+    let mut rotated = cube.apply(&only_implemented_transition);
+    println!("rotated: {rotated:?}");
+    
+    rotated = rotated.apply(&only_implemented_transition);
+    println!("rotated: {rotated:?}");
+    
+    rotated = rotated.apply(&only_implemented_transition);
+    println!("rotated: {rotated:?}");
+    
+    rotated = rotated.apply(&only_implemented_transition);
+    println!("rotated: {rotated:?}");
+    println!("after 4 identical rotations, same as initially? {}", cube == rotated);
 }
