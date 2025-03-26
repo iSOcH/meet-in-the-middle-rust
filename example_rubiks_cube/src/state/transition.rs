@@ -1,27 +1,29 @@
+use super::face::LineIndex as Index;
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Rotation(u8);
 
 pub static ALL_ROTATIONS: [Rotation; 18] = [
-    Rotation::new(Axis::X, Row::First, Times::Once),
-    Rotation::new(Axis::X, Row::First, Times::Twice),
-    Rotation::new(Axis::X, Row::First, Times::Thrice),
-    Rotation::new(Axis::X, Row::Last, Times::Once),
-    Rotation::new(Axis::X, Row::Last, Times::Twice),
-    Rotation::new(Axis::X, Row::Last, Times::Thrice),
+    Rotation::new(Axis::X, Index::First, Times::Once),
+    Rotation::new(Axis::X, Index::First, Times::Twice),
+    Rotation::new(Axis::X, Index::First, Times::Thrice),
+    Rotation::new(Axis::X, Index::Last, Times::Once),
+    Rotation::new(Axis::X, Index::Last, Times::Twice),
+    Rotation::new(Axis::X, Index::Last, Times::Thrice),
 
-    Rotation::new(Axis::Y, Row::First, Times::Once),
-    Rotation::new(Axis::Y, Row::First, Times::Twice),
-    Rotation::new(Axis::Y, Row::First, Times::Thrice),
-    Rotation::new(Axis::Y, Row::Last, Times::Once),
-    Rotation::new(Axis::Y, Row::Last, Times::Twice),
-    Rotation::new(Axis::Y, Row::Last, Times::Thrice),
+    Rotation::new(Axis::Y, Index::First, Times::Once),
+    Rotation::new(Axis::Y, Index::First, Times::Twice),
+    Rotation::new(Axis::Y, Index::First, Times::Thrice),
+    Rotation::new(Axis::Y, Index::Last, Times::Once),
+    Rotation::new(Axis::Y, Index::Last, Times::Twice),
+    Rotation::new(Axis::Y, Index::Last, Times::Thrice),
 
-    Rotation::new(Axis::Z, Row::First, Times::Once),
-    Rotation::new(Axis::Z, Row::First, Times::Twice),
-    Rotation::new(Axis::Z, Row::First, Times::Thrice),
-    Rotation::new(Axis::Z, Row::Last, Times::Once),
-    Rotation::new(Axis::Z, Row::Last, Times::Twice),
-    Rotation::new(Axis::Z, Row::Last, Times::Thrice),
+    Rotation::new(Axis::Z, Index::First, Times::Once),
+    Rotation::new(Axis::Z, Index::First, Times::Twice),
+    Rotation::new(Axis::Z, Index::First, Times::Thrice),
+    Rotation::new(Axis::Z, Index::Last, Times::Once),
+    Rotation::new(Axis::Z, Index::Last, Times::Twice),
+    Rotation::new(Axis::Z, Index::Last, Times::Thrice),
 ];
 
 #[repr(u8)]
@@ -39,16 +41,6 @@ pub enum Axis {
 
 #[repr(u8)]
 #[derive(Debug, PartialEq)]
-pub enum Row {
-    /// move which always affects C0
-    First = 0b0,  // 1 bit for 2 rows
-
-    /// move which always affects C8
-    Last  = 0b1,
-}
-
-#[repr(u8)]
-#[derive(Debug, PartialEq)]
 pub enum Times {
     Once   = 0b00,  // 2 bits for 3 rotation counts
     Twice  = 0b01,
@@ -60,8 +52,8 @@ impl Rotation {
     const ROW_MASK: u8   = 0b0010_0000;
     const TIMES_MASK: u8 = 0b0001_1000;
 
-    pub const fn new(axis: Axis, row: Row, times: Times) -> Self {
-        let value = (axis as u8) << 6 | (row as u8) << 5 | (times as u8) << 3;
+    pub const fn new(axis: Axis, idx: Index, times: Times) -> Self {
+        let value = (axis as u8) << 6 | (idx as u8) << 5 | (times as u8) << 3;
         Rotation(value)
     }
 
@@ -74,11 +66,11 @@ impl Rotation {
         }
     }
 
-    pub fn row(&self) -> Row {
+    pub fn line_index(&self) -> Index {
         if (self.0 & Self::ROW_MASK) != 0 {
-            Row::Last
+            Index::Last
         } else {
-            Row::First
+            Index::First
         }
     }
 

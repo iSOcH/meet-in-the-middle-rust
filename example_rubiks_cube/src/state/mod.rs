@@ -4,7 +4,7 @@ use core::fmt::Write;
 use indenter::{indented, Format};
 
 use meet_in_the_middle::State;
-use face::Face;
+pub use face::{Face, LineId, LineIndex};
 
 pub mod transition;
 mod face;
@@ -47,32 +47,25 @@ impl State for Cube {
     type Transition = transition::Rotation;
 
     fn apply(&self, change: &Self::Transition) -> Self {
-        let change_tuple = (change.axis(), change.row(), change.times());
+        let change_tuple = (change.axis(), change.line_index(), change.times());
         
         match change_tuple {
-            (transition::Axis::X, transition::Row::First, transition::Times::Once) => {
+            (transition::Axis::X, face::LineIndex::First, transition::Times::Once) => {
                 let new_b = self.sides[1].rotate_cw(transition::Times::Once);
 
                 // left column moves like A(0,3,6) -> C(0,3,6) -> F(0,3,6) -> E(8,5,2) -> A(0,3,6)
                 let mut new_c = self.sides[2].clone();
-                new_c.set_from(&self.sides[0], 0.try_into().unwrap());
-                new_c.set_from(&self.sides[0], 3.try_into().unwrap());
-                new_c.set_from(&self.sides[0], 6.try_into().unwrap());
+                let line = LineId::new(face::LineOrientation::Column, true);
+                new_c.set_from_line(&self.sides[0], &line, false);
 
                 let mut new_f = self.sides[5].clone();
-                new_f.set_from(&self.sides[2], 0.try_into().unwrap());
-                new_f.set_from(&self.sides[2], 3.try_into().unwrap());
-                new_f.set_from(&self.sides[2], 6.try_into().unwrap());
+                new_f.set_from_line(&self.sides[2], &line, false);
 
                 let mut new_e = self.sides[4].clone();
-                new_e.set(8.try_into().unwrap(), self.sides[5].get(0.try_into().unwrap()));
-                new_e.set(5.try_into().unwrap(), self.sides[5].get(3.try_into().unwrap()));
-                new_e.set(2.try_into().unwrap(), self.sides[5].get(6.try_into().unwrap()));
+                new_e.set_from_line(&self.sides[5], &line, true);
 
                 let mut new_a = self.sides[0].clone();
-                new_a.set(0.try_into().unwrap(), self.sides[4].get(8.try_into().unwrap()));
-                new_a.set(3.try_into().unwrap(), self.sides[4].get(5.try_into().unwrap()));
-                new_a.set(6.try_into().unwrap(), self.sides[4].get(2.try_into().unwrap()));
+                new_a.set_from_line(&self.sides[4], &line.mirrored(), true);
 
                 let new_d = self.sides[3].clone();
 
@@ -118,14 +111,14 @@ impl Display for Cube {
 
 #[cfg(test)]
 mod tests {
-    use crate::state::transition::{Axis, Row, Rotation, Times};
+    use crate::state::transition::{Axis, Rotation, Times};
 
     use super::*;
 
     #[test]
     fn transition_4_times_should_be_noop() {
         let initial_cube = Cube::solved();
-        let transition = Rotation::new(Axis::X, Row::First, Times::Once);
+        let transition = Rotation::new(Axis::X, LineIndex::First, Times::Once);
         
         let mut rotated = initial_cube.clone();
         for _ in 0..4 {

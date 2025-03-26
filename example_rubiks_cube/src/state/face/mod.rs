@@ -4,8 +4,11 @@ use super::transition;
 pub use color::Color;
 pub use index::Index as FaceIndex;
 
+pub use line::{Id as LineId, Index as LineIndex, Orientation as LineOrientation};
+
 mod index;
 mod color;
+mod line;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 // 9 * 6 colors = 9 * 3 bits = 27 bits
@@ -44,8 +47,14 @@ impl Face {
         self.0 = (self.0 & clear_stamp) | value_stamp;
     }
 
-    pub fn set_from(&mut self, source: &Face, index: FaceIndex) {
-        self.set(index, source.get(index));
+    pub fn set_from_line(&mut self, source: &Face, line: &line::Id, mirror: bool) {
+        let source_indices = line.indices();
+        let target_indices = if mirror { line.mirrored().indices() } else { source_indices };
+
+        for (idx_s, idx_d) in source_indices.into_iter().zip(target_indices) {
+            let color = source.get(idx_s);
+            self.set(idx_d, color);
+        }
     }
 
     pub fn rotate_cw(&self, times: transition::Times) -> Face {

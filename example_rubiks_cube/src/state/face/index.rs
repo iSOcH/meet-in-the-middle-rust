@@ -21,6 +21,12 @@ impl TryFrom<u8> for Index {
     }
 }
 
+impl From<Index> for u8 {
+    fn from(value: Index) -> Self {
+        value.0
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum IndexFromU8Error {
     ValueTooHigh
