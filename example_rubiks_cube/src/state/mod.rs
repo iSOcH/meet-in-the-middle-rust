@@ -1,4 +1,7 @@
-use std::array;
+use std::{array, fmt::Display};
+use core::fmt::Write;
+
+use indenter::{indented, Format};
 
 use meet_in_the_middle::State;
 use side::{RubiksSide, RubiksSideIndex};
@@ -81,6 +84,35 @@ impl State for RubiksCubeState {
 
     fn get_possible_transitions(&self) -> impl Iterator<Item = &Self::Transition> {
         transition::ALL_ROTATIONS.iter()
+    }
+}
+
+impl Display for RubiksCubeState {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let indentation = "                 "; // 17 chars
+
+        write!(indented(formatter).with_format(Format::Uniform { indentation }), "{}", self.sides[0])?;
+
+        // without this, indenter somehow affects the next line, breaking the top borders of the second row of sides
+        writeln!(formatter, "")?;
+
+        let mut lfrb_strings: [_; 4] = array::from_fn(|_| String::new());
+
+        for (idx, side_str) in lfrb_strings.iter_mut().enumerate() {
+            let side = &self.sides[idx+1];
+            write!(*side_str, "{}", side)?;
+        }
+
+        let lines_l = lfrb_strings[0].split('\n');
+        let lines_f = lfrb_strings[1].split('\n');
+        let lines_r = lfrb_strings[2].split('\n');
+        let lines_b= lfrb_strings[3].split('\n');
+
+        for (((l, f), r), b) in lines_l.zip(lines_f).zip(lines_r).zip(lines_b) {
+            writeln!(formatter, "{l}    {f}    {r}    {b}")?;
+        }
+
+        writeln!(indented(formatter).with_format(Format::Uniform { indentation }), "{}", self.sides[5])
     }
 }
 

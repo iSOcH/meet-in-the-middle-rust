@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 meet_in_the_middle = { path = "../meet_in_the_middle" }
+indenter = { version = "0.2"}

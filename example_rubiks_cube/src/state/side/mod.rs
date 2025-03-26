@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 use super::transition;
 pub use color::RubiksSideColor;
@@ -77,6 +77,18 @@ impl Debug for RubiksSide {
         }
 
         builder.finish()
+    }
+}
+
+impl Display for RubiksSide {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "+-----------+")?;
+        writeln!(f, "| {} | {} | {} |", u8::from(self.get(RubiksSideIndex(0))), u8::from(self.get(RubiksSideIndex(1))), u8::from(self.get(RubiksSideIndex(2))))?;
+        writeln!(f, "|---+---+---|")?;
+        writeln!(f, "| {} | {} | {} |", u8::from(self.get(RubiksSideIndex(3))), u8::from(self.get(RubiksSideIndex(4))), u8::from(self.get(RubiksSideIndex(5))))?;
+        writeln!(f, "|---+---+---|")?;
+        writeln!(f, "| {} | {} | {} |", u8::from(self.get(RubiksSideIndex(6))), u8::from(self.get(RubiksSideIndex(7))), u8::from(self.get(RubiksSideIndex(8))))?;
+        writeln!(f, "+-----------+")
     }
 }
 

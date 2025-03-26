@@ -5,20 +5,20 @@ mod state;
 
 fn main() {
     let cube = RubiksCubeState::solved();
-    println!("solved cube: {cube:?}");
+    println!("solved cube:\n{cube}");
 
     let only_implemented_transition = RubiksCubeRotation::new(Axis::X, Row::First, Times::Once);
     
     let mut rotated = cube.apply(&only_implemented_transition);
-    println!("rotated: {rotated:?}");
+    println!("rotated:\n{rotated}");
     
     rotated = rotated.apply(&only_implemented_transition);
-    println!("rotated: {rotated:?}");
+    println!("rotated:\n{rotated}");
     
     rotated = rotated.apply(&only_implemented_transition);
-    println!("rotated: {rotated:?}");
+    println!("rotated:\n{rotated}");
     
     rotated = rotated.apply(&only_implemented_transition);
-    println!("rotated: {rotated:?}");
+    println!("final:\n{rotated}");
     println!("after 4 identical rotations, same as initially? {}", cube == rotated);
 }
