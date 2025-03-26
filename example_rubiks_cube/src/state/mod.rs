@@ -48,7 +48,17 @@ impl State for Cube {
 
     fn apply(&self, change: &Self::Transition) -> Self {
         let change_tuple = (change.axis(), change.line_index(), change.times());
-        
+
+        let (mut rotate, mut untouched, line_move) = match change.axis() {
+            transition::Axis::X => (1, 3, [0, 2, 5, 4]),
+            transition::Axis::Y => (0, 5, [1, 2, 3, 4]),
+            transition::Axis::Z => (2, 4, [0, 4, 5, 1]),
+        };
+
+        if change.line_index() == LineIndex::Last {
+            (rotate, untouched) = (untouched, rotate);
+        }
+
         match change_tuple {
             (transition::Axis::X, face::LineIndex::First, transition::Times::Once) => {
                 let new_b = self.sides[1].rotate_cw(transition::Times::Once);
@@ -61,9 +71,11 @@ impl State for Cube {
                 let mut new_f = self.sides[5].clone();
                 new_f.set_from_line(&self.sides[2], &line, false);
 
+                // this and next face incorporate shifts from or to E, so they need mirroring
                 let mut new_e = self.sides[4].clone();
                 new_e.set_from_line(&self.sides[5], &line, true);
 
+                // note that we shift from the mirrored line, mirroring back into the "normal" line (0,3,6)
                 let mut new_a = self.sides[0].clone();
                 new_a.set_from_line(&self.sides[4], &line.mirrored(), true);
 
