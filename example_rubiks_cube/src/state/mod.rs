@@ -4,10 +4,10 @@ use core::fmt::Write;
 use indenter::{indented, Format};
 
 use meet_in_the_middle::State;
-use side::{RubiksSide, RubiksSideIndex};
+use face::{Face, FaceIndex};
 
 pub mod transition;
-mod side;
+mod face;
 
 /// We model a rubicks cube like this
 /// 
@@ -29,22 +29,22 @@ mod side;
 ///                      |                          |
 ///                    Y-Axis                     Y-Axis
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct RubiksCubeState {
-    sides: [RubiksSide; 6]
+pub struct Cube {
+    sides: [Face; 6]
 }
 
-impl RubiksCubeState {
-    pub fn new(sides: [RubiksSide; 6]) -> RubiksCubeState {
-        RubiksCubeState { sides }
+impl Cube {
+    pub fn new(sides: [Face; 6]) -> Cube {
+        Cube { sides }
     }
 
-    pub fn solved() -> RubiksCubeState {
-        RubiksCubeState { sides: array::from_fn(|i| RubiksSide::unicolor((i as u8).try_into().unwrap())) }
+    pub fn solved() -> Cube {
+        Cube { sides: array::from_fn(|i| Face::unicolor((i as u8).try_into().unwrap())) }
     }
 }
 
-impl State for RubiksCubeState {
-    type Transition = transition::RubiksCubeRotation;
+impl State for Cube {
+    type Transition = transition::Rotation;
 
     fn apply(&self, change: &Self::Transition) -> Self {
         let change_tuple = (change.axis(), change.row(), change.times());
@@ -55,28 +55,28 @@ impl State for RubiksCubeState {
 
                 // left column moves like A(0,3,6) -> C(0,3,6) -> F(0,3,6) -> E(8,5,2) -> A(0,3,6)
                 let mut new_c = self.sides[2].clone();
-                new_c.set_from(&self.sides[0], RubiksSideIndex(0));
-                new_c.set_from(&self.sides[0], RubiksSideIndex(3));
-                new_c.set_from(&self.sides[0], RubiksSideIndex(6));
+                new_c.set_from(&self.sides[0], FaceIndex(0));
+                new_c.set_from(&self.sides[0], FaceIndex(3));
+                new_c.set_from(&self.sides[0], FaceIndex(6));
 
                 let mut new_f = self.sides[5].clone();
-                new_f.set_from(&self.sides[2], RubiksSideIndex(0));
-                new_f.set_from(&self.sides[2], RubiksSideIndex(3));
-                new_f.set_from(&self.sides[2], RubiksSideIndex(6));
+                new_f.set_from(&self.sides[2], FaceIndex(0));
+                new_f.set_from(&self.sides[2], FaceIndex(3));
+                new_f.set_from(&self.sides[2], FaceIndex(6));
 
                 let mut new_e = self.sides[4].clone();
-                new_e.set(RubiksSideIndex(8), self.sides[5].get(RubiksSideIndex(0)));
-                new_e.set(RubiksSideIndex(5), self.sides[5].get(RubiksSideIndex(3)));
-                new_e.set(RubiksSideIndex(2), self.sides[5].get(RubiksSideIndex(6)));
+                new_e.set(FaceIndex(8), self.sides[5].get(FaceIndex(0)));
+                new_e.set(FaceIndex(5), self.sides[5].get(FaceIndex(3)));
+                new_e.set(FaceIndex(2), self.sides[5].get(FaceIndex(6)));
 
                 let mut new_a = self.sides[0].clone();
-                new_a.set(RubiksSideIndex(0), self.sides[4].get(RubiksSideIndex(8)));
-                new_a.set(RubiksSideIndex(3), self.sides[4].get(RubiksSideIndex(5)));
-                new_a.set(RubiksSideIndex(6), self.sides[4].get(RubiksSideIndex(2)));
+                new_a.set(FaceIndex(0), self.sides[4].get(FaceIndex(8)));
+                new_a.set(FaceIndex(3), self.sides[4].get(FaceIndex(5)));
+                new_a.set(FaceIndex(6), self.sides[4].get(FaceIndex(2)));
 
                 let new_d = self.sides[3].clone();
 
-                RubiksCubeState::new([new_a, new_b, new_c, new_d, new_e, new_f])
+                Cube::new([new_a, new_b, new_c, new_d, new_e, new_f])
             },
             _ => todo!()
         }
@@ -87,7 +87,7 @@ impl State for RubiksCubeState {
     }
 }
 
-impl Display for RubiksCubeState {
+impl Display for Cube {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let indentation = "                 "; // 17 chars
 
@@ -118,14 +118,14 @@ impl Display for RubiksCubeState {
 
 #[cfg(test)]
 mod tests {
-    use crate::state::transition::{Axis, Row, RubiksCubeRotation, Times};
+    use crate::state::transition::{Axis, Row, Rotation, Times};
 
     use super::*;
 
     #[test]
     fn transition_4_times_should_be_noop() {
-        let initial_cube = RubiksCubeState::solved();
-        let transition = RubiksCubeRotation::new(Axis::X, Row::First, Times::Once);
+        let initial_cube = Cube::solved();
+        let transition = Rotation::new(Axis::X, Row::First, Times::Once);
         
         let mut rotated = initial_cube.clone();
         for _ in 0..4 {

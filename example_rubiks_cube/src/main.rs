@@ -1,13 +1,13 @@
 use meet_in_the_middle::State;
-use state::{transition::{Axis, Row, RubiksCubeRotation, Times}, RubiksCubeState};
+use state::{transition::{Axis, Row, Rotation, Times}, Cube};
 
 mod state;
 
 fn main() {
-    let cube = RubiksCubeState::solved();
+    let cube = Cube::solved();
     println!("solved cube:\n{cube}");
 
-    let only_implemented_transition = RubiksCubeRotation::new(Axis::X, Row::First, Times::Once);
+    let only_implemented_transition = Rotation::new(Axis::X, Row::First, Times::Once);
     
     let mut rotated = cube.apply(&only_implemented_transition);
     println!("rotated:\n{rotated}");

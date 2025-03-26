@@ -1,27 +1,27 @@
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub struct RubiksCubeRotation(u8);
+pub struct Rotation(u8);
 
-pub static ALL_ROTATIONS: [RubiksCubeRotation; 18] = [
-    RubiksCubeRotation::new(Axis::X, Row::First, Times::Once),
-    RubiksCubeRotation::new(Axis::X, Row::First, Times::Twice),
-    RubiksCubeRotation::new(Axis::X, Row::First, Times::Thrice),
-    RubiksCubeRotation::new(Axis::X, Row::Last, Times::Once),
-    RubiksCubeRotation::new(Axis::X, Row::Last, Times::Twice),
-    RubiksCubeRotation::new(Axis::X, Row::Last, Times::Thrice),
+pub static ALL_ROTATIONS: [Rotation; 18] = [
+    Rotation::new(Axis::X, Row::First, Times::Once),
+    Rotation::new(Axis::X, Row::First, Times::Twice),
+    Rotation::new(Axis::X, Row::First, Times::Thrice),
+    Rotation::new(Axis::X, Row::Last, Times::Once),
+    Rotation::new(Axis::X, Row::Last, Times::Twice),
+    Rotation::new(Axis::X, Row::Last, Times::Thrice),
 
-    RubiksCubeRotation::new(Axis::Y, Row::First, Times::Once),
-    RubiksCubeRotation::new(Axis::Y, Row::First, Times::Twice),
-    RubiksCubeRotation::new(Axis::Y, Row::First, Times::Thrice),
-    RubiksCubeRotation::new(Axis::Y, Row::Last, Times::Once),
-    RubiksCubeRotation::new(Axis::Y, Row::Last, Times::Twice),
-    RubiksCubeRotation::new(Axis::Y, Row::Last, Times::Thrice),
+    Rotation::new(Axis::Y, Row::First, Times::Once),
+    Rotation::new(Axis::Y, Row::First, Times::Twice),
+    Rotation::new(Axis::Y, Row::First, Times::Thrice),
+    Rotation::new(Axis::Y, Row::Last, Times::Once),
+    Rotation::new(Axis::Y, Row::Last, Times::Twice),
+    Rotation::new(Axis::Y, Row::Last, Times::Thrice),
 
-    RubiksCubeRotation::new(Axis::Z, Row::First, Times::Once),
-    RubiksCubeRotation::new(Axis::Z, Row::First, Times::Twice),
-    RubiksCubeRotation::new(Axis::Z, Row::First, Times::Thrice),
-    RubiksCubeRotation::new(Axis::Z, Row::Last, Times::Once),
-    RubiksCubeRotation::new(Axis::Z, Row::Last, Times::Twice),
-    RubiksCubeRotation::new(Axis::Z, Row::Last, Times::Thrice),
+    Rotation::new(Axis::Z, Row::First, Times::Once),
+    Rotation::new(Axis::Z, Row::First, Times::Twice),
+    Rotation::new(Axis::Z, Row::First, Times::Thrice),
+    Rotation::new(Axis::Z, Row::Last, Times::Once),
+    Rotation::new(Axis::Z, Row::Last, Times::Twice),
+    Rotation::new(Axis::Z, Row::Last, Times::Thrice),
 ];
 
 #[repr(u8)]
@@ -55,14 +55,14 @@ pub enum Times {
     Thrice = 0b10,
 }
 
-impl RubiksCubeRotation {
+impl Rotation {
     const AXIS_MASK: u8  = 0b1100_0000;
     const ROW_MASK: u8   = 0b0010_0000;
     const TIMES_MASK: u8 = 0b0001_1000;
 
     pub const fn new(axis: Axis, row: Row, times: Times) -> Self {
         let value = (axis as u8) << 6 | (row as u8) << 5 | (times as u8) << 3;
-        RubiksCubeRotation(value)
+        Rotation(value)
     }
 
     pub fn axis(&self) -> Axis {
