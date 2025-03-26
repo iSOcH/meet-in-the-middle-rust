@@ -2,7 +2,9 @@ use std::fmt::{Debug, Display};
 
 use super::transition;
 pub use color::Color;
+pub use index::Index as FaceIndex;
 
+mod index;
 mod color;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -13,8 +15,9 @@ impl Face {
     pub fn new(colors: [Color; 9]) -> Face {
         let mut value = 0u32;
         
-        for logical_index in 0..9 {
-            let shift = logical_index * 3;
+        for logical_index in 0..9usize {
+            let face_index = FaceIndex(logical_index as u8);
+            let shift = face_index.to_shift();
             value |= (u32::from(colors[logical_index])) << shift;
         }
 
@@ -26,18 +29,19 @@ impl Face {
     }
 
     pub fn get(&self, index: FaceIndex) -> Color {
-        let mask: u8 = 0b0000_0111;
-        let shift = index.0 * 3;
+        let mask: u8 = 0b111;
+        let shift = index.to_shift();
         let bits = (self.0 >> shift) as u8 & mask;
         bits.try_into().unwrap()
     }
 
     pub fn set(&mut self, index: FaceIndex, value: Color) {
-        let clear_stamp: u32 = !(0b0111 << index.0 * 3);
-        self.0 &= clear_stamp;
+        let shift = index.to_shift();
 
-        let value_stamp: u32 = (u32::from(value)) << index.0 * 3;
-        self.0 |= value_stamp;
+        let clear_stamp: u32 = !(0b111 << shift);
+        let value_stamp: u32 = (u32::from(value)) << shift;
+
+        self.0 = (self.0 & clear_stamp) | value_stamp;
     }
 
     pub fn set_from(&mut self, source: &Face, index: FaceIndex) {
@@ -91,9 +95,6 @@ impl Display for Face {
         writeln!(f, "+-----------+")
     }
 }
-
-#[derive(Debug, Clone, Copy)]
-pub struct FaceIndex(pub u8);
 
 #[cfg(test)]
 mod test {
