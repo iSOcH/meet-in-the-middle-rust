@@ -112,7 +112,7 @@ impl Display for Cube {
             writeln!(formatter, "{l}    {f}    {r}    {b}")?;
         }
 
-        writeln!(indented(formatter).with_format(Format::Uniform { indentation }), "{}", self.sides[5])
+        write!(indented(formatter).with_format(Format::Uniform { indentation }), "{}", self.sides[5])
     }
 }
 

@@ -92,7 +92,7 @@ impl Display for Face {
         writeln!(f, "| {} | {} | {} |", u8::from(self.get(3.try_into().unwrap())), u8::from(self.get(4.try_into().unwrap())), u8::from(self.get(5.try_into().unwrap())))?;
         writeln!(f, "|---+---+---|")?;
         writeln!(f, "| {} | {} | {} |", u8::from(self.get(6.try_into().unwrap())), u8::from(self.get(7.try_into().unwrap())), u8::from(self.get(8.try_into().unwrap())))?;
-        writeln!(f, "+-----------+")
+        write!(f, "+-----------+")
     }
 }
 
