@@ -22,6 +22,14 @@ pub fn find_nodes_on_path<TState, TTransition>(source: &TState, target: &TState)
         return VecDeque::new();
     }
 
+    // this might feel weird, but without handling this case as well we can
+    // endlessly recurse below. root cause / improvement might be to prevent
+    // Solver::run from returning such a result if it was found
+    let mut neighbors_of_target = target.get_neighbors();
+    if neighbors_of_target.find(|n| n == source).is_some() {
+        return VecDeque::new();
+    }
+
     let mut solver = Solver::new(source.clone(), target.clone());
     
     if let Some(node_on_path) = solver.run() {
