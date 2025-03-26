@@ -16,7 +16,7 @@ impl Face {
         let mut value = 0u32;
         
         for logical_index in 0..9usize {
-            let face_index = FaceIndex(logical_index as u8);
+            let face_index = FaceIndex::try_from(logical_index as u8).unwrap();
             let shift = face_index.to_shift();
             value |= (u32::from(colors[logical_index])) << shift;
         }
@@ -53,16 +53,16 @@ impl Face {
         
         match times {
             transition::Times::Once => {
-                new_side.set(FaceIndex(0), self.get(FaceIndex(6)));
-                new_side.set(FaceIndex(1), self.get(FaceIndex(3)));
-                new_side.set(FaceIndex(2), self.get(FaceIndex(0)));
+                new_side.set(0.try_into().unwrap(), self.get(6.try_into().unwrap()));
+                new_side.set(1.try_into().unwrap(), self.get(3.try_into().unwrap()));
+                new_side.set(2.try_into().unwrap(), self.get(0.try_into().unwrap()));
 
-                new_side.set(FaceIndex(3), self.get(FaceIndex(7)));
-                new_side.set(FaceIndex(5), self.get(FaceIndex(1)));
+                new_side.set(3.try_into().unwrap(), self.get(7.try_into().unwrap()));
+                new_side.set(5.try_into().unwrap(), self.get(1.try_into().unwrap()));
 
-                new_side.set(FaceIndex(6), self.get(FaceIndex(8)));
-                new_side.set(FaceIndex(7), self.get(FaceIndex(5)));
-                new_side.set(FaceIndex(8), self.get(FaceIndex(2)));
+                new_side.set(6.try_into().unwrap(), self.get(8.try_into().unwrap()));
+                new_side.set(7.try_into().unwrap(), self.get(5.try_into().unwrap()));
+                new_side.set(8.try_into().unwrap(), self.get(2.try_into().unwrap()));
             },
             _ => todo!()
         }
@@ -76,7 +76,7 @@ impl Debug for Face {
         let mut builder = f.debug_list();
 
         for i in 0..9 {
-            let entry: u8 = self.get(FaceIndex(i)).into();
+            let entry: u8 = self.get(i.try_into().unwrap()).into();
             builder.entry(&entry);
         }
 
@@ -87,11 +87,11 @@ impl Debug for Face {
 impl Display for Face {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "+-----------+")?;
-        writeln!(f, "| {} | {} | {} |", u8::from(self.get(FaceIndex(0))), u8::from(self.get(FaceIndex(1))), u8::from(self.get(FaceIndex(2))))?;
+        writeln!(f, "| {} | {} | {} |", u8::from(self.get(0.try_into().unwrap())), u8::from(self.get(1.try_into().unwrap())), u8::from(self.get(2.try_into().unwrap())))?;
         writeln!(f, "|---+---+---|")?;
-        writeln!(f, "| {} | {} | {} |", u8::from(self.get(FaceIndex(3))), u8::from(self.get(FaceIndex(4))), u8::from(self.get(FaceIndex(5))))?;
+        writeln!(f, "| {} | {} | {} |", u8::from(self.get(3.try_into().unwrap())), u8::from(self.get(4.try_into().unwrap())), u8::from(self.get(5.try_into().unwrap())))?;
         writeln!(f, "|---+---+---|")?;
-        writeln!(f, "| {} | {} | {} |", u8::from(self.get(FaceIndex(6))), u8::from(self.get(FaceIndex(7))), u8::from(self.get(FaceIndex(8))))?;
+        writeln!(f, "| {} | {} | {} |", u8::from(self.get(6.try_into().unwrap())), u8::from(self.get(7.try_into().unwrap())), u8::from(self.get(8.try_into().unwrap())))?;
         writeln!(f, "+-----------+")
     }
 }
@@ -105,7 +105,7 @@ mod test {
     fn set_cell() {
         for idx in 0..9 {
             let mut mutated = indexed_side();
-            let rubiks_index = FaceIndex(idx);
+            let rubiks_index = idx.try_into().unwrap();
             let written = ((idx + 1) % 6).try_into().unwrap();
             
             mutated.set(rubiks_index, written);

@@ -4,7 +4,7 @@ use core::fmt::Write;
 use indenter::{indented, Format};
 
 use meet_in_the_middle::State;
-use face::{Face, FaceIndex};
+use face::Face;
 
 pub mod transition;
 mod face;
@@ -55,24 +55,24 @@ impl State for Cube {
 
                 // left column moves like A(0,3,6) -> C(0,3,6) -> F(0,3,6) -> E(8,5,2) -> A(0,3,6)
                 let mut new_c = self.sides[2].clone();
-                new_c.set_from(&self.sides[0], FaceIndex(0));
-                new_c.set_from(&self.sides[0], FaceIndex(3));
-                new_c.set_from(&self.sides[0], FaceIndex(6));
+                new_c.set_from(&self.sides[0], 0.try_into().unwrap());
+                new_c.set_from(&self.sides[0], 3.try_into().unwrap());
+                new_c.set_from(&self.sides[0], 6.try_into().unwrap());
 
                 let mut new_f = self.sides[5].clone();
-                new_f.set_from(&self.sides[2], FaceIndex(0));
-                new_f.set_from(&self.sides[2], FaceIndex(3));
-                new_f.set_from(&self.sides[2], FaceIndex(6));
+                new_f.set_from(&self.sides[2], 0.try_into().unwrap());
+                new_f.set_from(&self.sides[2], 3.try_into().unwrap());
+                new_f.set_from(&self.sides[2], 6.try_into().unwrap());
 
                 let mut new_e = self.sides[4].clone();
-                new_e.set(FaceIndex(8), self.sides[5].get(FaceIndex(0)));
-                new_e.set(FaceIndex(5), self.sides[5].get(FaceIndex(3)));
-                new_e.set(FaceIndex(2), self.sides[5].get(FaceIndex(6)));
+                new_e.set(8.try_into().unwrap(), self.sides[5].get(0.try_into().unwrap()));
+                new_e.set(5.try_into().unwrap(), self.sides[5].get(3.try_into().unwrap()));
+                new_e.set(2.try_into().unwrap(), self.sides[5].get(6.try_into().unwrap()));
 
                 let mut new_a = self.sides[0].clone();
-                new_a.set(FaceIndex(0), self.sides[4].get(FaceIndex(8)));
-                new_a.set(FaceIndex(3), self.sides[4].get(FaceIndex(5)));
-                new_a.set(FaceIndex(6), self.sides[4].get(FaceIndex(2)));
+                new_a.set(0.try_into().unwrap(), self.sides[4].get(8.try_into().unwrap()));
+                new_a.set(3.try_into().unwrap(), self.sides[4].get(5.try_into().unwrap()));
+                new_a.set(6.try_into().unwrap(), self.sides[4].get(2.try_into().unwrap()));
 
                 let new_d = self.sides[3].clone();
 
