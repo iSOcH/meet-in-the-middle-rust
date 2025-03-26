@@ -83,3 +83,23 @@ impl State for RubiksCubeState {
         transition::ALL_ROTATIONS.iter()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::state::transition::{Axis, Row, RubiksCubeRotation, Times};
+
+    use super::*;
+
+    #[test]
+    fn transition_4_times_should_be_noop() {
+        let initial_cube = RubiksCubeState::solved();
+        let transition = RubiksCubeRotation::new(Axis::X, Row::First, Times::Once);
+        
+        let mut rotated = initial_cube.clone();
+        for _ in 0..4 {
+            rotated = rotated.apply(&transition);
+        }
+
+        assert_eq!(initial_cube, rotated);
+    }
+}
