@@ -1,10 +1,11 @@
-use std::{array, fmt::Display};
+use std::{array, fmt::Display, ops::Rem};
 use core::fmt::Write;
 
 use indenter::{indented, Format};
 
 use meet_in_the_middle::State;
 pub use face::{Face, LineId, LineIndex};
+use transition::Axis;
 
 pub mod transition;
 mod face;
@@ -47,44 +48,49 @@ impl State for Cube {
     type Transition = transition::Rotation;
 
     fn apply(&self, change: &Self::Transition) -> Self {
-        let change_tuple = (change.axis(), change.line_index(), change.times());
 
-        let (mut rotate, mut untouched, line_move) = match change.axis() {
-            transition::Axis::X => (1, 3, [0, 2, 5, 4]),
-            transition::Axis::Y => (0, 5, [1, 2, 3, 4]),
-            transition::Axis::Z => (2, 4, [0, 4, 5, 1]),
+        // face_move_rotations[0] contains the number of rotations to perform during move from face_move_indices[0] to face_move_indices[1]
+        let (mut rotated_face_idx, untouched_face_idx, face_move_indices, face_move_rotations, mut line_source) = match change.axis() {
+            Axis::X => (1, 3, [0, 2, 5, 4], [0, 0, 2, 2], LineId::new(face::LineOrientation::Column, false)),
+            Axis::Y => (0, 5, [1, 2, 3, 4], [0; 4], LineId::new(face::LineOrientation::Row, true)),
+            Axis::Z => (2, 4, [0, 3, 5, 1], [1; 4], LineId::new(face::LineOrientation::Column, false)),
         };
 
         if change.line_index() == LineIndex::Last {
-            (rotate, untouched) = (untouched, rotate);
+            rotated_face_idx = untouched_face_idx;
+            line_source = line_source.rotate_cw().rotate_cw();
         }
 
-        match change_tuple {
-            (transition::Axis::X, face::LineIndex::First, transition::Times::Once) => {
-                let new_b = self.sides[1].rotate_cw(transition::Times::Once);
+        let rotation_count = change.times() as u8;
+        let mut new_cube = self.clone();
 
-                // left column moves like A(0,3,6) -> C(0,3,6) -> F(0,3,6) -> E(8,5,2) -> A(0,3,6)
-                let mut new_c = self.sides[2].clone();
-                let line = LineId::new(face::LineOrientation::Column, true);
-                new_c.set_from_line(&self.sides[0], &line, false);
+        for _ in 0..=rotation_count {
+            new_cube.sides[rotated_face_idx] = new_cube.sides[rotated_face_idx].rotate_cw(transition::Times::Once);
 
-                let mut new_f = self.sides[5].clone();
-                new_f.set_from_line(&self.sides[2], &line, false);
+            let mut face_src = new_cube.sides[face_move_indices[3]].clone();
 
-                // this and next face incorporate shifts from or to E, so they need mirroring
-                let mut new_e = self.sides[4].clone();
-                new_e.set_from_line(&self.sides[5], &line, true);
+            for (side_move_target_idx, &side_target_idx) in face_move_indices.iter().enumerate() {
+                let side_tmp = new_cube.sides[side_target_idx].clone();
+                let rotations_index = (side_move_target_idx + 4 - 1) % 4; // +4: ensure positive result
+                let rotations = face_move_rotations[rotations_index];
+                let mut line = line_source.clone();
 
-                // note that we shift from the mirrored line, mirroring back into the "normal" line (0,3,6)
-                let mut new_a = self.sides[0].clone();
-                new_a.set_from_line(&self.sides[4], &line.mirrored(), true);
+                for _ in 0..rotations {
+                    face_src = face_src.rotate_cw(transition::Times::Once);
+                    line = line.rotate_cw();
+                }
 
-                let new_d = self.sides[3].clone();
+                // since we rotated face_src already we can use the same line as on the target for copying
+                // println!("Copying {line_source:?} to {line:?} on face {side_target_idx}, before:\n{new_cube}");
+                new_cube.sides[side_target_idx].set_from_line(&face_src, &line, false);
+                // println!("{new_cube}");
 
-                Cube::new([new_a, new_b, new_c, new_d, new_e, new_f])
-            },
-            _ => todo!()
+                face_src = side_tmp;
+                line_source = line;
+            }
         }
+
+        new_cube
     }
 
     fn get_possible_transitions(&self) -> impl Iterator<Item = &Self::Transition> {
@@ -130,13 +136,21 @@ mod tests {
     #[test]
     fn transition_4_times_should_be_noop() {
         let initial_cube = Cube::solved();
-        let transition = Rotation::new(Axis::X, LineIndex::First, Times::Once);
-        
-        let mut rotated = initial_cube.clone();
-        for _ in 0..4 {
-            rotated = rotated.apply(&transition);
-        }
 
-        assert_eq!(initial_cube, rotated);
+        for axis in [Axis::X, Axis::Y, Axis::Z] {
+            for idx in [LineIndex::First, LineIndex::Last] {
+                for times in [Times::Once, Times::Twice, Times::Thrice] {
+                    let transition = Rotation::new(axis, idx, times);
+
+                    let mut rotated = initial_cube.clone();
+                    for _ in 0..4 {
+                        rotated = rotated.apply(&transition);
+                    }
+            
+                    assert_eq!(initial_cube, rotated, "transition: {}", transition);
+                }
+            }
+        }
+        
     }
 }
