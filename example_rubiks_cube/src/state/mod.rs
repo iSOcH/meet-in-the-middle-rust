@@ -129,28 +129,30 @@ impl Display for Cube {
 
 #[cfg(test)]
 mod tests {
-    use crate::state::transition::{Axis, Rotation, Times};
+    use rand::{rngs, Rng, SeedableRng};
 
-    use super::*;
+    use super::{face::test::random_face, *};
 
     #[test]
     fn transition_4_times_should_be_noop() {
-        let initial_cube = Cube::solved();
+        let mut rnd = rngs::StdRng::from_seed([0; 32]);
 
-        for axis in [Axis::X, Axis::Y, Axis::Z] {
-            for idx in [LineIndex::First, LineIndex::Last] {
-                for times in [Times::Once, Times::Twice, Times::Thrice] {
-                    let transition = Rotation::new(axis, idx, times);
+        for _ in 0..100 {
+            let initial_cube = random_cube(&mut rnd);
 
-                    let mut rotated = initial_cube.clone();
-                    for _ in 0..4 {
-                        rotated = rotated.apply(&transition);
-                    }
-            
-                    assert_eq!(initial_cube, rotated, "transition: {}", transition);
+            for transition in &transition::ALL_ROTATIONS {
+                let mut rotated = initial_cube.clone();
+                for _ in 0..4 {
+                    rotated = rotated.apply(transition);
                 }
-            }
-        }
         
+                assert_eq!(initial_cube, rotated, "transition: {}", transition);
+            } 
+        }        
+    }
+
+    fn random_cube<TRng: Rng>(rng: &mut TRng) -> Cube {
+        let faces = array::from_fn(|_| random_face(rng));
+        Cube { sides: faces }
     }
 }

@@ -106,7 +106,7 @@ impl Display for Face {
 }
 
 #[cfg(test)]
-mod test {
+pub(crate) mod test {
     use std::array;
     use super::*;
 
@@ -164,5 +164,10 @@ mod test {
         let colors = array::from_fn(|i| ((i % 6) as u8).try_into().unwrap());
         let side = Face::new(colors);
         side
+    }
+
+    pub(crate) fn random_face<TRand: rand::Rng>(rng: &mut TRand) -> Face {
+        let colors = array::from_fn(|_| rng.random_range(0..=5)).map(|r| Color::try_from(r).unwrap());
+        Face::new(colors)
     }
 }
