@@ -77,7 +77,7 @@ impl<TState, TTransition> Solver<TState, TTransition>
         }
     }
 
-    fn explore(discoverer: &mut Discoverer<'_, TState, TTransition>, other_discoverer: &Discoverer<'_, TState, TTransition>, num_nodes: usize) -> Option<TState> {
+    fn explore(discoverer: &mut Discoverer<TState, TTransition>, other_discoverer: &Discoverer<TState, TTransition>, num_nodes: usize) -> Option<TState> {
         for new_state in discoverer.take(num_nodes) {
             if other_discoverer.was_seen(&new_state) {
                 return Some(new_state);
@@ -88,18 +88,17 @@ impl<TState, TTransition> Solver<TState, TTransition>
     }
 }
 
-struct Discoverer<'a, TState, TTransition> where
+struct Discoverer<TState, TTransition> where
     TState : State<Transition = TTransition>,
 {
-    source: &'a TState,
     explored_states: HashSet<TState>,
     states_to_explore: VecDeque<TState>,
 }
 
-impl<'a, TState, TTransition> Discoverer<'a, TState, TTransition> where
+impl<TState, TTransition> Discoverer<TState, TTransition> where
     TState : State<Transition = TTransition>,
 {
-    fn new(source: &'a TState) -> Discoverer<'a, TState, TTransition> {
+    fn new(source: &TState) -> Discoverer<TState, TTransition> {
         let mut states_to_explore = VecDeque::new();
         states_to_explore.push_back(source.clone());
         
@@ -107,7 +106,6 @@ impl<'a, TState, TTransition> Discoverer<'a, TState, TTransition> where
         explored_states.insert(source.clone());
 
         Discoverer {
-            source: source,
             explored_states,
             states_to_explore
         }
@@ -122,7 +120,7 @@ impl<'a, TState, TTransition> Discoverer<'a, TState, TTransition> where
     }
 }
 
-impl<'a, TState, TTransition> Iterator for Discoverer<'a, TState, TTransition> where
+impl<TState, TTransition> Iterator for Discoverer<TState, TTransition> where
     TState : State<Transition = TTransition>,
 {
     type Item = TState;

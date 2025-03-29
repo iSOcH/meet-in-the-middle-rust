@@ -1,4 +1,4 @@
-use std::{array, fmt::Display, ops::Rem};
+use std::{array, fmt::Display};
 use core::fmt::Write;
 
 use indenter::{indented, Format};
@@ -40,7 +40,7 @@ impl Cube {
     }
 
     pub fn solved() -> Cube {
-        Cube { sides: array::from_fn(|i| Face::unicolor((i as u8).try_into().unwrap())) }
+        Cube::new(array::from_fn(|i| Face::unicolor((i as u8).try_into().unwrap())))
     }
 }
 
@@ -153,6 +153,6 @@ mod tests {
 
     fn random_cube<TRng: Rng>(rng: &mut TRng) -> Cube {
         let faces = array::from_fn(|_| random_face(rng));
-        Cube { sides: faces }
+        Cube::new(faces)
     }
 }
