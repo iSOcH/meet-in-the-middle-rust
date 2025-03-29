@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use super::face::LineIndex as Index;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -27,7 +29,7 @@ pub static ALL_ROTATIONS: [Rotation; 18] = [
 ];
 
 #[repr(u8)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Axis {
     /// Through B and D
     X = 0b00,  // 2 bits for 3 axes (X, Y, Z)
@@ -40,7 +42,7 @@ pub enum Axis {
 }
 
 #[repr(u8)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Times {
     Once   = 0b00,  // 2 bits for 3 rotation counts
     Twice  = 0b01,
@@ -81,5 +83,11 @@ impl Rotation {
             0b10 => Times::Thrice,
             _ => unreachable!(),
         }
+    }
+}
+
+impl Display for Rotation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Rotation({:?}, {:?}, {:?})", self.axis(), self.line_index(), self.times())
     }
 }
