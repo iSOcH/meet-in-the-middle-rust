@@ -1,11 +1,12 @@
-use std::{array, fmt::Display};
+use std::{array, collections::{HashMap, HashSet}, fmt::Display};
 use core::fmt::Write;
 
+use face::Color;
 use indenter::{indented, Format};
 
 use meet_in_the_middle::State;
 pub use face::{Face, LineId, LineIndex};
-use transition::Axis;
+use transition::{Axis, Times};
 
 pub mod transition;
 mod face;
@@ -40,8 +41,60 @@ impl Cube {
         Cube { sides }
     }
 
+    pub fn from_unvalidated_raw_colors(faces_raw: &[[u8; 9]; 6]) -> Result<Cube, CubeFromRawColorsError> {
+        let mut faces = vec![];
+        let mut center_colors = HashSet::new();
+        let mut color_counts = HashMap::new();
+
+        for face_raw in faces_raw {
+            let colors_of_face_r: Result<Vec<Color>, _> = face_raw.map(|c| Color::try_from(c)).into_iter().collect();
+            let colors_of_face = colors_of_face_r?;
+
+            let center_color = colors_of_face[4];
+            if !center_colors.insert(center_color) {
+                return Err(CubeFromRawColorsError::CenterColorDuplicate(center_color));
+            }
+
+            for color in &colors_of_face {
+                let entry = color_counts.entry(color.clone());
+                match entry {
+                    std::collections::hash_map::Entry::Vacant(_) => { entry.insert_entry(1); },
+                    std::collections::hash_map::Entry::Occupied(_) => { entry.and_modify(|c| *c += 1); }
+                }
+            }
+
+            let face = Face::new(colors_of_face.try_into().unwrap());
+            faces.push(face);
+        }
+
+        for (color, count) in color_counts {
+            if count != 9 {
+                return Err(CubeFromRawColorsError::ColorCountInvalid(color, count));
+            }
+        }
+
+        let faces_array = faces.try_into().unwrap();
+        Ok(Cube::new(faces_array))
+    }
+
     pub fn solved() -> Self {
         Cube::new(array::from_fn(|i| Face::unicolor((i as u8).try_into().unwrap())))
+    }
+}
+
+# [derive(Debug, PartialEq, Eq, Clone)]
+pub enum CubeFromRawColorsError {
+    ColorError(face::color::ColorFromU8Error),
+
+    #[allow(dead_code)]
+    CenterColorDuplicate(face::color::Color),
+
+    ColorCountInvalid(face::color::Color, u8),
+}
+
+impl From<face::color::ColorFromU8Error> for CubeFromRawColorsError {
+    fn from(value: face::color::ColorFromU8Error) -> Self {
+        Self::ColorError(value)
     }
 }
 
@@ -147,7 +200,7 @@ mod tests {
                     rotated = rotated.apply(transition);
                 }
         
-                assert_eq!(initial_cube, rotated, "transition: {}", transition);
+                assert_eq!(initial_cube, rotated, "transition: {transition} resulted in\n{rotated}\ninstead of\n{initial_cube}");
             } 
         }        
     }

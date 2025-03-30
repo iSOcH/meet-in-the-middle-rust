@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::{Debug, Display}};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Color(u8);
 
 impl TryFrom<u8> for Color {
@@ -27,7 +27,7 @@ impl From<Color> for u32 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum ColorFromU8Error {
     ValueTooHigh
 }
