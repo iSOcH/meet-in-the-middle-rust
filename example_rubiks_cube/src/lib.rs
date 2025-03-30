@@ -16,7 +16,7 @@ pub fn solve_cube_with_transitions(cube: &RubiksCube) -> Vec<Step> {
     let mut from = iterator.next().unwrap();
 
     while let Some(to) = iterator.next() {
-        let transition = from.get_possible_transitions().find(|t| from.apply(t) == to).unwrap().clone();
+        let transition = from.get_possible_transitions().find(|&t| from.apply(t) == to).unwrap().clone();
         result.push(Step { from_state: from, transition });
         from = to;
     }
