@@ -1,13 +1,12 @@
+use example_rubiks_cube::state::{self, LineIndex};
 use meet_in_the_middle::State;
 use state::{transition::{Axis, Rotation, Times}, Cube};
-
-mod state;
 
 fn main() {
     let cube = Cube::solved();
     // println!("solved cube:\n{cube}");
 
-    let only_implemented_transition = Rotation::new(Axis::X, state::LineIndex::First, Times::Once);
+    let only_implemented_transition = Rotation::new(Axis::X, LineIndex::First, Times::Once);
     
     let rotated = cube.apply(&only_implemented_transition);
 
