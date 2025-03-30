@@ -131,7 +131,7 @@ impl<TState, TTransition> Iterator for Discoverer<TState, TTransition> where
 
     fn next(&mut self) -> Option<Self::Item> {
         let to_explore = self.states_to_explore.pop_front().unwrap_or_else(|| {
-            println!("Finished level {}", self.current_level);
+            println!("Finished level {}, seen {} unique states", self.current_level, self.explored_states.len());
 
             self.current_level += 1;
             self.states_to_explore = std::mem::take(&mut self.states_to_explore_next);
