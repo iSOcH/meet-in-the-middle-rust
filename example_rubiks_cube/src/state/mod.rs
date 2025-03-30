@@ -106,20 +106,29 @@ impl State for Cube {
         // face_move_rotations[0] contains the number of rotations to perform during move from face_move_indices[0] to face_move_indices[1]
         let (mut rotated_face_idx, untouched_face_idx, face_move_indices, face_move_rotations, mut line_source) = match change.axis() {
             Axis::X => (1, 3, [0, 2, 5, 4], [0, 0, 2, 2], LineId::new(face::LineOrientation::Column, false)),
-            Axis::Y => (0, 5, [1, 2, 3, 4], [0; 4], LineId::new(face::LineOrientation::Row, true)),
+            Axis::Y => (0, 5, [4, 3, 2, 1], [0; 4], LineId::new(face::LineOrientation::Row, true)),
             Axis::Z => (2, 4, [0, 3, 5, 1], [1; 4], LineId::new(face::LineOrientation::Column, false)),
         };
 
-        if change.line_index() == LineIndex::Last {
+        let is_last_line = change.line_index() == LineIndex::Last;
+        
+        if is_last_line {
             rotated_face_idx = untouched_face_idx;
             line_source = line_source.rotate_cw().rotate_cw();
         }
 
         let rotation_count = change.times() as u8;
         let mut new_cube = self.clone();
+        
+        let rotated_face_cw_rotations = match (change.times(), is_last_line) {
+            (Times::Once, true) => Times::Thrice,
+            (Times::Thrice, true) => Times::Once,
+            (t, _) => t
+        };
+
+        new_cube.sides[rotated_face_idx] = new_cube.sides[rotated_face_idx].rotate_cw(rotated_face_cw_rotations);
 
         for _ in 0..=rotation_count {
-            new_cube.sides[rotated_face_idx] = new_cube.sides[rotated_face_idx].rotate_cw(transition::Times::Once);
 
             let mut face_src = new_cube.sides[face_move_indices[3]].clone();
 
