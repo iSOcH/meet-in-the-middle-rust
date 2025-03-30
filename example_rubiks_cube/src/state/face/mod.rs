@@ -7,7 +7,7 @@ pub use index::Index as FaceIndex;
 pub use line::{Id as LineId, Index as LineIndex, Orientation as LineOrientation};
 
 mod index;
-mod color;
+pub mod color;
 mod line;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -73,7 +73,24 @@ impl Face {
                 new_side.set(7.try_into().unwrap(), self.get(5.try_into().unwrap()));
                 new_side.set(8.try_into().unwrap(), self.get(2.try_into().unwrap()));
             },
-            _ => todo!()
+            transition::Times::Twice => {
+                for target_idx in 0..9 {
+                    let source_idx = 8 - target_idx;
+                    new_side.set(target_idx.try_into().unwrap(), self.get(source_idx.try_into().unwrap()));
+                }
+            },
+            transition::Times::Thrice => {
+                new_side.set(0.try_into().unwrap(), self.get(2.try_into().unwrap()));
+                new_side.set(1.try_into().unwrap(), self.get(5.try_into().unwrap()));
+                new_side.set(2.try_into().unwrap(), self.get(8.try_into().unwrap()));
+
+                new_side.set(3.try_into().unwrap(), self.get(1.try_into().unwrap()));
+                new_side.set(5.try_into().unwrap(), self.get(7.try_into().unwrap()));
+
+                new_side.set(6.try_into().unwrap(), self.get(0.try_into().unwrap()));
+                new_side.set(7.try_into().unwrap(), self.get(3.try_into().unwrap()));
+                new_side.set(8.try_into().unwrap(), self.get(6.try_into().unwrap()));
+            },
         }
 
         new_side
@@ -108,6 +125,10 @@ impl Display for Face {
 #[cfg(test)]
 pub(crate) mod test {
     use std::array;
+    use rand::{rngs, SeedableRng};
+
+    use crate::state::transition::Times;
+
     use super::*;
 
     #[test]
@@ -149,15 +170,47 @@ pub(crate) mod test {
 
     #[test]
     fn rotate_cw_4_times_should_be_noop() {
+        for times in [Times::Once, Times::Twice, Times::Thrice] {
+            let initial_side = indexed_side();
+
+            let mut rotated = initial_side.clone();
+    
+            for _ in 0..4 {
+                rotated = rotated.rotate_cw(times);
+            }
+    
+            assert_eq!(initial_side, rotated);
+        }
+    }
+
+    #[test]
+    fn rotate_cw_twice_2_times_should_be_noop() {
         let initial_side = indexed_side();
 
         let mut rotated = initial_side.clone();
 
-        for _ in 0..4 {
-            rotated = rotated.rotate_cw(transition::Times::Once);
+        for _ in 0..2 {
+            rotated = rotated.rotate_cw(Times::Twice);
         }
 
         assert_eq!(initial_side, rotated);
+    }
+
+    #[test]
+    fn rotate_cw_multiply() {
+        let mut rng = rngs::StdRng::seed_from_u64(42);
+
+        for _ in 0..10 {
+            let face = random_face(&mut rng);
+    
+            let once = face.rotate_cw(Times::Once);
+
+            let twice = once.rotate_cw(Times::Once);
+            assert_eq!(twice, face.rotate_cw(Times::Twice));
+
+            let thrice = twice.rotate_cw(Times::Once);
+            assert_eq!(thrice, face.rotate_cw(Times::Thrice));
+        }
     }
 
     fn indexed_side() -> Face {
