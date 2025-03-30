@@ -78,7 +78,7 @@ impl<TState, TTransition> Solver<TState, TTransition>
     }
 
     fn explore(discoverer: &mut Discoverer<TState, TTransition>, other_discoverer: &Discoverer<TState, TTransition>, num_nodes: usize) -> Option<TState> {
-        for new_state in discoverer.take(num_nodes) {
+        for (new_state, _) in discoverer.take(num_nodes) {
             if other_discoverer.was_seen(&new_state) {
                 return Some(new_state);
             }
@@ -93,26 +93,30 @@ struct Discoverer<TState, TTransition> where
 {
     explored_states: HashSet<TState>,
     states_to_explore: VecDeque<TState>,
+    states_to_explore_next: VecDeque<TState>,
+    current_level: u8,
 }
 
 impl<TState, TTransition> Discoverer<TState, TTransition> where
     TState : State<Transition = TTransition>,
 {
     fn new(source: &TState) -> Discoverer<TState, TTransition> {
-        let mut states_to_explore = VecDeque::new();
-        states_to_explore.push_back(source.clone());
+        let mut states_to_explore_next = VecDeque::new();
+        states_to_explore_next.push_back(source.clone());
         
         let mut explored_states = HashSet::new();
         explored_states.insert(source.clone());
 
         Discoverer {
             explored_states,
-            states_to_explore
+            states_to_explore: VecDeque::new(),
+            states_to_explore_next,
+            current_level: 0
         }
     }
 
     fn add_for_later(&mut self, state: TState) {
-        self.states_to_explore.push_back(state);
+        self.states_to_explore_next.push_back(state);
     }
 
     fn was_seen(&self, state: &TState) -> bool {
@@ -123,10 +127,16 @@ impl<TState, TTransition> Discoverer<TState, TTransition> where
 impl<TState, TTransition> Iterator for Discoverer<TState, TTransition> where
     TState : State<Transition = TTransition>,
 {
-    type Item = TState;
+    type Item = (TState, u8);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let to_explore = self.states_to_explore.pop_front()?;
+        let to_explore = self.states_to_explore.pop_front().unwrap_or_else(|| {
+            println!("Finished level {}", self.current_level);
+
+            self.current_level += 1;
+            self.states_to_explore = std::mem::take(&mut self.states_to_explore_next);
+            self.states_to_explore.pop_front().unwrap()
+        });
 
         // breadth-first: remember to explore descendents of `to_explore` after this round
         for t in to_explore.get_possible_transitions() {
@@ -139,6 +149,6 @@ impl<TState, TTransition> Iterator for Discoverer<TState, TTransition> where
             }
         }
 
-        Some(to_explore)
+        Some((to_explore, self.current_level))
     }
 }
