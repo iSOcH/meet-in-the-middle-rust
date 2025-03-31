@@ -18,6 +18,7 @@ fn main() {
         [3, 2, 0, 1, 5, 4, 0, 2, 2]
     ]).unwrap();
 
+    // 7 moves
     // let cube = RubiksCube::from_unvalidated_raw_colors(&[
     //     [4, 0, 1, 1, 0, 5, 2, 4, 2],
     //     [1, 2, 3, 1, 1, 5, 4, 3, 3],
@@ -27,6 +28,7 @@ fn main() {
     //     [2, 5, 3, 2, 5, 3, 3, 5, 5]
     // ]).unwrap();
 
+    // 5 moves
     // let cube = RubiksCube::from_unvalidated_raw_colors(&[
     //     [0, 0, 3, 0, 0, 3, 3, 0, 3],
     //     [1, 1, 2, 2, 1, 1, 2, 1, 1],
