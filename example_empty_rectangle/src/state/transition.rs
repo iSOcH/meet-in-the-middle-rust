@@ -1,5 +1,6 @@
 use super::PositionInRectangle;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Move {
     Left,
     Up,

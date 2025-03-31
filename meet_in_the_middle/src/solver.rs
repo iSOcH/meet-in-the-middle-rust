@@ -3,7 +3,9 @@ use std::collections::{HashSet, VecDeque};
 use crate::State;
 
 pub fn find_path<TState, TTransition>(source: &TState, target: &TState) -> impl IntoIterator<Item = TState> where
-    TState : State<Transition = TTransition> {
+    TState : State<Transition = TTransition>,
+    TTransition : Clone,
+{
     let mut nodes_between = find_nodes_on_path(source, target);
     nodes_between.push_front(source.clone());
     nodes_between.push_back(target.clone());
@@ -11,7 +13,9 @@ pub fn find_path<TState, TTransition>(source: &TState, target: &TState) -> impl 
 }
 
 pub fn find_nodes_on_path<TState, TTransition>(source: &TState, target: &TState) -> VecDeque<TState> where
-    TState : State<Transition = TTransition> {
+    TState : State<Transition = TTransition>,
+    TTransition : Clone,
+{
 
     if source == target {
         return VecDeque::new();
@@ -52,6 +56,7 @@ pub struct Solver<TState, TTransition> where
 
 impl<TState, TTransition> Solver<TState, TTransition>
     where TState : State<Transition = TTransition>,
+    TTransition : Clone,
 {
     pub fn new(source: TState, target: TState) -> Solver<TState, TTransition> {
         Solver {
@@ -90,28 +95,27 @@ impl<TState, TTransition> Solver<TState, TTransition>
 
 struct Discoverer<TState, TTransition> where
     TState : State<Transition = TTransition>,
+    TTransition : Clone,
 {
     explored_states: HashSet<TState>,
     states_to_explore: VecDeque<TState>,
     states_to_explore_next: VecDeque<TState>,
     current_level: u8,
+
+    current_state: CurrentState<TState, TTransition>
 }
 
 impl<TState, TTransition> Discoverer<TState, TTransition> where
     TState : State<Transition = TTransition>,
+    TTransition : Clone
 {
     fn new(source: &TState) -> Discoverer<TState, TTransition> {
-        let mut states_to_explore_next = VecDeque::new();
-        states_to_explore_next.push_back(source.clone());
-        
-        let mut explored_states = HashSet::new();
-        explored_states.insert(source.clone());
-
         Discoverer {
-            explored_states,
+            explored_states: HashSet::new(),
             states_to_explore: VecDeque::new(),
-            states_to_explore_next,
-            current_level: 0
+            states_to_explore_next: VecDeque::new(),
+            current_level: 0,
+            current_state: CurrentState::new(source.clone())
         }
     }
 
@@ -126,29 +130,52 @@ impl<TState, TTransition> Discoverer<TState, TTransition> where
 
 impl<TState, TTransition> Iterator for Discoverer<TState, TTransition> where
     TState : State<Transition = TTransition>,
+    TTransition : Clone
 {
     type Item = (TState, u8);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let to_explore = self.states_to_explore.pop_front().unwrap_or_else(|| {
-            println!("Finished level {}, seen {} unique states", self.current_level, self.explored_states.len());
+        loop {
+            while self.current_state.remaining_transitions.is_empty() {
+                let next = self.states_to_explore.pop_front().or_else(|| {
+                    self.current_level += 1;
+                    
+                    if self.current_level > 3 {
+                        println!("Finished level {}, seen {} unique states", self.current_level, self.explored_states.len());
+                    }
+        
+                    self.states_to_explore = std::mem::take(&mut self.states_to_explore_next);
+                    self.states_to_explore.pop_front()
+                });
 
-            self.current_level += 1;
-            self.states_to_explore = std::mem::take(&mut self.states_to_explore_next);
-            self.states_to_explore.pop_front().unwrap()
-        });
-
-        // breadth-first: remember to explore descendents of `to_explore` after this round
-        for t in to_explore.get_possible_transitions() {
-            let potential_future_state = to_explore.apply(&t);
+                self.current_state = CurrentState::new(next?);
+            }
             
-            let not_yet_visited = self.explored_states.insert(potential_future_state.clone());
+            let next_transition = self.current_state.remaining_transitions.pop().expect("would have returned in loop above");
+            let new_state = self.current_state.state.apply(&next_transition);
 
-            if not_yet_visited {
-                self.add_for_later(potential_future_state);
+            if self.explored_states.insert(new_state.clone()) {
+                self.add_for_later(new_state.clone());
+                return Some((new_state, self.current_level));
             }
         }
+    }
+}
 
-        Some((to_explore, self.current_level))
+struct CurrentState<TState, TTransition> where
+    TState : State<Transition = TTransition>,
+    TTransition : Clone,
+{
+    state: TState,
+    remaining_transitions: Vec<TTransition>
+}
+
+impl<TState, TTransition> CurrentState<TState, TTransition> where
+    TState : State<Transition = TTransition>,
+    TTransition : Clone
+{
+    fn new(state: TState) -> CurrentState<TState, TTransition> {
+        let transitions = state.get_possible_transitions().cloned().collect();
+        CurrentState { state, remaining_transitions: transitions }
     }
 }
