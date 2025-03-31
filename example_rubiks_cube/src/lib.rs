@@ -1,8 +1,9 @@
 pub mod state;
 
-use std::sync::OnceLock;
+use std::{collections::HashSet, sync::OnceLock};
 
 use meet_in_the_middle::{find_path, State};
+use rand::{seq::IteratorRandom, Rng};
 pub use state::Cube as RubiksCube;
 
 pub fn solve_cube(cube: &RubiksCube) -> impl IntoIterator<Item = RubiksCube> {
@@ -34,4 +35,37 @@ pub fn get_solved_cube() -> &'static RubiksCube {
 pub struct Step {
     pub from_state: RubiksCube,
     pub transition: state::transition::Rotation,
+}
+
+pub fn cube_with_random_moves<TRng: Rng>(rng: &mut TRng, move_count: u8) -> RubiksCube {
+    let mut cube = RubiksCube::solved();
+    
+    let mut seen_cubes = HashSet::new();
+    seen_cubes.insert(cube.clone());
+
+    let mut last_rotation: Option<state::transition::Rotation> = None;
+    
+    for _ in 0..move_count {
+        loop {
+            let transition = cube
+                .get_possible_transitions()
+                .filter(|&r| {
+                    // picking the same face again would result in 2 subsequent moves which could have been done in a single step
+                    last_rotation.map(|lr| r.axis() != lr.axis() && r.line_index() != lr.line_index()).unwrap_or(true)
+                })
+                .choose(rng)
+                .unwrap()
+                .clone();
+            
+            let modified_cube = cube.apply(&transition);
+
+            if seen_cubes.insert(modified_cube.clone()) {
+                cube = modified_cube;
+                last_rotation = Some(transition);
+                break;
+            }
+        }
+    }
+
+    cube
 }
